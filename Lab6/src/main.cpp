@@ -72,10 +72,80 @@ void colorKeypoints(Mat frame, vector<Point2f> keypoints, Scalar color)
     }
 }
 
-//void printRectangle(Mat img, Mat frame, Mat H)
-//{
+void printRectangle(Mat img, Mat frame, Mat H, Scalar color)
+{
+    vector<Point2f> image_points;
+    image_points.push_back(Point2f(0,0));
+    image_points.push_back(Point2f(img.cols, 0));
+    image_points.push_back(Point2f(0,img.rows));
+    image_points.push_back(Point2f(img.cols, img.rows));
+    vector<Point2f> frame_points;
+    perspectiveTransform(image_points, frame_points, H);
     
-//}
+    line(frame, frame_points[0], frame_points[1], color);
+    line(frame, frame_points[1], frame_points[3], color);
+    line(frame, frame_points[3], frame_points[2], color);
+    line(frame, frame_points[2], frame_points[0], color);
+    
+}
+
+void firstFrameProcessing(Mat frame)
+{
+    video_keypoints = extractKeypoints(frame);
+    video_descriptor = extractDescriptor(frame, video_keypoints);
+
+    for (int i = 0; i < obj_images.size(); i++)
+        {
+            matches.push_back(findMatches(obj_descriptors[i], video_descriptor));
+            
+            vector<uint8_t> mask;
+
+            for (int j = 0 ; j < matches[i].size(); j++)
+            {
+                h_src[i].push_back(obj_keypoints[i][matches[i][j].queryIdx].pt);
+                h_dst[i].push_back(video_keypoints[matches[i][j].trainIdx].pt);
+            }
+            H.push_back(findHomography(h_src[i], h_dst[i], RANSAC, 3, mask));
+            
+            //adjust destination points considered into the frame
+            vector<Point2f> temp;
+            for (int j = 0; j < h_src[i].size(); j++)
+            {
+                if (!mask[j]) continue;
+                temp.push_back(h_dst[i][j]);
+            }
+            h_dst[i] = temp;
+            /**
+            selection of the color with respect to the image
+            */
+            Scalar color;
+            switch (i) {
+                case 0:
+                    color = Scalar(255,0,255);
+                    break;
+                case 1:
+                    color = Scalar(0,0,255);
+                    break;
+                case 2:
+                    color = Scalar(0,255,0);
+                    break;
+                case 3:
+                    color = Scalar(255,0,0);
+                    break;
+                default:
+                    color = Scalar(0,0,0);
+                    break;
+            }
+            colorKeypoints(frame, h_dst[i], color);
+            printRectangle(obj_images[i], frame, H[i], color);
+            
+            }
+                
+    imshow("Prova", frame);
+    waitKey(0);
+    
+}
+
 
 int main(int argc, char* argv[]) {
     
@@ -85,6 +155,7 @@ int main(int argc, char* argv[]) {
     
     //load images using the path
     loadImages(images_folder);
+    
     //extract features
     for (int i = 0; i < obj_images.size(); i++)
     {
@@ -106,55 +177,9 @@ int main(int argc, char* argv[]) {
         
         if(current_frame == 0)
         {
-            video_keypoints = extractKeypoints(frame);
-            video_descriptor = extractDescriptor(frame, video_keypoints);
-            
-            for (int i = 0; i < obj_images.size(); i++)
-            {
-                matches.push_back(findMatches(obj_descriptors[i], video_descriptor));
-            
-                // Further refine matches through RANSAC
-                
-                vector<uint8_t> mask;
-
-                for (int j = 0 ; j < matches[i].size(); j++) {
-                    h_src[i].push_back(obj_keypoints[i][matches[i][j].queryIdx].pt);
-                    h_dst[i].push_back(video_keypoints[matches[i][j].trainIdx].pt);
-                }
-                H.push_back(findHomography(h_src[i], h_dst[i], RANSAC, 3, mask));
-                //adjust destination points considered into the destination(video frame)
-                vector<Point2f> temp;
-                for (int j = 0; j < h_src[i].size(); j++) {
-                    if (!mask[j]) continue;
-                    temp.push_back(h_dst[i][j]);
-                }
-                h_dst[i] = temp;
-                Scalar color;
-                switch (i) {
-                    case 0:
-                        color = Scalar(255,255,255);
-                        break;
-                    case 1:
-                        color = Scalar(0,0,255);
-                        break;
-                    case 2:
-                        color = Scalar(0,255,0);
-                        break;
-                    case 3:
-                        color = Scalar(255,0,0);
-                        break;
-                    default:
-                        color = Scalar(0,0,0);
-                        break;
-                }
-                colorKeypoints(frame, h_dst[i], color);
-            }
-            
-            
-            imshow("Prova", frame);
-            waitKey(0);
-
+            firstFrameProcessing(frame);
         }
+        
         else
         {
                 //*******your implementation********
