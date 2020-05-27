@@ -64,6 +64,18 @@ vector<DMatch> findMatches(Mat obj_descr, Mat video_descr)
 
 }
 
+void colorKeypoints(Mat frame, vector<Point2f> keypoints, Scalar color)
+{
+    for (int i = 0; i < keypoints.size(); i++)
+    {
+        circle(frame, keypoints[i], 3, color);
+    }
+}
+
+//void printRectangle(Mat img, Mat frame, Mat H)
+//{
+    
+//}
 
 int main(int argc, char* argv[]) {
     
@@ -110,21 +122,44 @@ int main(int argc, char* argv[]) {
                     h_dst[i].push_back(video_keypoints[matches[i][j].trainIdx].pt);
                 }
                 H.push_back(findHomography(h_src[i], h_dst[i], RANSAC, 3, mask));
-               //adjust destination points considered into the destination(video frame)
+                //adjust destination points considered into the destination(video frame)
                 vector<Point2f> temp;
                 for (int j = 0; j < h_src[i].size(); j++) {
                     if (!mask[j]) continue;
                     temp.push_back(h_dst[i][j]);
                 }
                 h_dst[i] = temp;
+                Scalar color;
+                switch (i) {
+                    case 0:
+                        color = Scalar(255,255,255);
+                        break;
+                    case 1:
+                        color = Scalar(0,0,255);
+                        break;
+                    case 2:
+                        color = Scalar(0,255,0);
+                        break;
+                    case 3:
+                        color = Scalar(255,0,0);
+                        break;
+                    default:
+                        color = Scalar(0,0,0);
+                        break;
+                }
+                colorKeypoints(frame, h_dst[i], color);
             }
-
+            
+            
+            imshow("Prova", frame);
+            waitKey(0);
 
         }
         else
         {
                 //*******your implementation********
         }
+        
         imshow("Video", frame);
         if(waitKey(30) >= 0) break;
         
