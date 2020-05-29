@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
         for (int j = 0; j < outline_points_obj.size(); j++) {
             if (!tracking_failed[j]) {
                 printRectangle(outline_points_obj[j], curr_frame, colors[j]);
-                // colorKeypoints(curr_frame, pts_to_track_obj[j], Scalar(0, 255, 255));
+                colorKeypoints(curr_frame, pts_to_track_obj[j], colors[j]);
             }
         }
         video.write(curr_frame);
