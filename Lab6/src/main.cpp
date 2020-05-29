@@ -23,7 +23,7 @@ vector<Scalar> colors;
 vector<Mat> obj_images;
 vector<vector<KeyPoint>> obj_keypoints;
 vector<Mat> obj_descriptors;
-vector<vector<Point2f>> h_dst(4);
+vector<vector<Point2f>> h_dst;
 
 
 void loadImages(string images_folder) {
@@ -93,12 +93,14 @@ void initTracking(Mat frame, vector<vector<Point2f>> &obj_outline_points, vector
             matches.push_back(findMatches(obj_descriptors[i], video_descriptor));
             
             vector<uint8_t> mask;
-
+            vector<Point2f> tempPoint;
+        
             for (int j = 0 ; j < matches[i].size(); j++)
             {
                 h_src[i].push_back(obj_keypoints[i][matches[i][j].queryIdx].pt);
-                h_dst[i].push_back(video_keypoints[matches[i][j].trainIdx].pt);
+                tempPoint.push_back(video_keypoints[matches[i][j].trainIdx].pt);
             }
+            h_dst.push_back(tempPoint);
             Mat H = findHomography(h_src[i], h_dst[i], RANSAC, RANSAC_REPROJECT_ERROR, mask);
             
             //adjust destination points considered into the frame
