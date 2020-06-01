@@ -81,7 +81,8 @@ void printRectangle(vector<Point2f> outline_points, Mat src_img, Scalar color) {
  * @param features_obj will hold a list of keypoints for each object
  */
 void initTracking(Mat frame, vector<vector<Point2f>> &obj_outline_points, vector<vector<Point2f>> &features_obj) {
-    vector<vector<Point2f>> h_src(4);
+    vector<vector<Point2f>> h_src(obj_images.size());
+
     vector<KeyPoint> video_keypoints;
     Mat video_descriptor;
     vector<vector<DMatch>> matches;
@@ -186,8 +187,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Blur objects to track
-    for (int i = 0; i < obj_images.size(); i++) {
-        GaussianBlur(obj_images[i], obj_images[i], GAUSSIAN_BLUR_SIZE, GAUSSIAN_SIGMA, GAUSSIAN_SIGMA);
+    for (auto & obj_image : obj_images) {
+        GaussianBlur(obj_image, obj_image, GAUSSIAN_BLUR_SIZE, GAUSSIAN_SIGMA, GAUSSIAN_SIGMA);
     }
 
     //extract features
@@ -205,7 +206,7 @@ int main(int argc, char* argv[]) {
     vector<bool> tracking_failed;
     vector<vector<Point2f>> outline_points_obj; // 4 points defining a rectangle for each obj to track
     vector<vector<Point2f>> pts_to_track_obj; // keypoints for each obj to track
-    Mat curr_frame, prev_frame, curr_gray, prev_gray;
+    Mat curr_frame, prev_frame;
 
     VideoWriter video;
 
@@ -214,10 +215,6 @@ int main(int argc, char* argv[]) {
         cap >> curr_frame; // get a new frame from camera
         if (curr_frame.empty())
             break;
-
-        // Work on gray and blurred frame
-        cvtColor(curr_frame, curr_gray, COLOR_BGR2GRAY);
-        GaussianBlur(curr_gray, curr_gray, GAUSSIAN_BLUR_SIZE, GAUSSIAN_SIGMA, GAUSSIAN_SIGMA);
 
         if(first_frame) {
             initTracking(curr_frame, outline_points_obj, pts_to_track_obj);
@@ -230,7 +227,7 @@ int main(int argc, char* argv[]) {
                 if (tracking_failed[i])
                     continue;
 
-                bool success = updateKeypointsAndOutline(prev_gray, curr_gray, pts_to_track_obj[i], outline_points_obj[i]);
+                bool success = updateKeypointsAndOutline(prev_frame, curr_frame, pts_to_track_obj[i], outline_points_obj[i]);
 
                 if (!success) {
                     tracking_failed[i] = true;
@@ -241,7 +238,6 @@ int main(int argc, char* argv[]) {
         }
 
         prev_frame = curr_frame.clone();
-        prev_gray = curr_gray.clone();
 
         // print rectangles and keypoints
         for (int j = 0; j < outline_points_obj.size(); j++) {
