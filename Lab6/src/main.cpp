@@ -14,7 +14,7 @@ Size GAUSSIAN_BLUR_SIZE(3,3);
 float GAUSSIAN_SIGMA = 1;
 float RANSAC_REPROJECT_ERROR = 3;
 Size LK_WIN_SIZE(17,17);
-int LK_MAX_PYR_LEV = 2;
+int LK_MAX_PYR_LEV = 0;
 
 /**
  Global variables
